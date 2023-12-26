@@ -2,7 +2,7 @@
 Projekto tikslas buvo sukurti duomenų produktą - analitinę aplikaciją, skirtą banko paskolos įvertinimui mašininio mokymosi algoritmų pagalba. 
 
 
-Projektą sudaro 6 aplankai:
+### Projektą sudaro 6 aplankai:
 - "1-data" - Duomenų failų aplankalas, tačiau čia įkelti neleido, kadangi GitHub failo įkėlimo dydis negali viršyti 25MB.
 - "2-report" - Šiame aplankale yra failas, kuriame aprašyta žvalgomoji duomenų failų kintamųjų analizė.
 - "3-R" - Šiame aplankale yra du R programavimo kalbos failai, kuriuose yra atliekami duomenų tvarkymo darbai, bei modeliavimas.

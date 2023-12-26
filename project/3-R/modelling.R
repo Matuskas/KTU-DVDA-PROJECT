@@ -1,18 +1,23 @@
 library(h2o)
 library(xgboost)
 
-h2o.init(max_mem_size = "14g")
+h2o.init(max_mem_size = "12g")
 
 df <- h2o.importFile("../1-data/train_data.csv")
 test_data <- h2o.importFile("../1-data/test_data.csv")
 df
 class(df)
 summary(df)
+h2o.impute(df, "max_open_credit", method = "median")
+h2o.impute(df, "yearly_income", method = "mean", by = c("home_ownership"))
+h2o.impute(df, "years_current_job", method = "mean")
+summary(df)
 
 y <- "y"
 x <- setdiff(names(df), c(y, "id"))
 df$y <- as.factor(df$y)
 summary(df)
+
 
 splits <- h2o.splitFrame(df, c(0.6,0.2), seed=123)
 train  <- h2o.assign(splits[[1]], "train") # 60%
@@ -28,8 +33,6 @@ aml <- h2o.automl(x = x,
 aml@leaderboard
 
 model <- aml@leader
-
-
 model <- h2o.getModel("GBM_1_AutoML_1_20231225_153343")
 
 h2o.performance(model, train = TRUE)
@@ -53,9 +56,9 @@ predictions %>%
 
 ### ID, Y
 
-h2o.saveModel(model, "../4-model/", filename = "my_best_automlmodel")
+#h2o.saveModel(model, "../4-model/", filename = "my_best_automlmodel")
 
-model <- h2o.loadModel("../4-model/my_best_automlmodel")
+#model <- h2o.loadModel("../4-model/my_best_automlmodel")
 h2o.varimp_plot(gbm_model)
 
 
@@ -74,7 +77,6 @@ h2o.auc(rf_model)
 h2o.auc(h2o.performance(rf_model, valid = TRUE))
 h2o.auc(h2o.performance(rf_model, newdata = test))
 
-h2o.saveModel(rf_model, "../4-model/", filename = "rf_model1")
 
 # Write GBM?
 
@@ -84,14 +86,14 @@ gbm_model <- h2o.gbm(x,
                      training_frame = train,
                      validation_frame = valid,
                      ntrees = 35,
-                     max_depth = 20,
+                     max_depth = 15,
                      stopping_metric = "AUC",
                      seed = 1234)
 h2o.auc(gbm_model)
 h2o.auc(h2o.performance(gbm_model, valid = TRUE))
 h2o.auc(h2o.performance(gbm_model, newdata = test))
 
-h2o.saveModel(gbm_model, "../4-model/", filename = "gbm_model")
+h2o.saveModel(gbm_model, "../4-model/", filename = "gbm_model1")
 
 # deep learning
 
@@ -127,7 +129,7 @@ h2o.auc(h2o.performance(dl_model, newdata = test))
 # Grid search
 
 
-dl_params <- list(ntrees = list(30,40,50,60), max_depth = list(20,25,30))
+dl_params <- list(ntrees = list(10,20,30,40,50,60), max_depth = list(10,20,25,30))
 
 dl_grid <- h2o.grid(algorithm = "gbm",
                     grid_id = "ktu_grid",
@@ -143,33 +145,8 @@ h2o.getGrid(dl_grid@grid_id, sort_by = "auc")
 
 best_grid <- h2o.getModel(dl_grid@model_ids[[1]])
 
-# 2023.11.17
 
 # Explain 
 
-h2o.explain_row(model, test, row_index = 1)
+h2o.explain_row(gbm_model, test, row_index = 1)
 
-# Imputation
-summary(df)
-h2o.impute(df, "max_open_credit", method = "median")
-summary(df)
-h2o.impute(df, "yearly_income", method = "mean", by = c("home_ownership"))
-summary(df)
-
-# Deep features
-
-deepfeatures_layer2 = h2o.deepfeatures(dl_model, df, layer = 2)
-head(deepfeatures_layer2)
-
-combined_features <- h2o.cbind(deepfeatures_layer2, df$y)
-combined_features$y <- as.factor(combined_features$y)
-
-rf_model_deepfeatures <- h2o.randomForest(names(deepfeatures_layer2),
-                                          y,
-                                          combined_features)
-h2o.auc(rf_model_deepfeatures)
-
-deepfeatures_layer2_test = h2o.deepfeatures(dl_model, test_data, layer = 2)
-
-predictions_rf_deepfeatures <- h2o.predict(rf_model_deepfeatures, deepfeatures_layer2_test) %>%
-  as_tibble()

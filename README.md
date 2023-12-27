@@ -1,1 +1,1 @@
-Pilnas projektas atnaujintas "project" aplanke
+Projektas randasi "project" aplanke

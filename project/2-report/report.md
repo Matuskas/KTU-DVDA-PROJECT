@@ -1,34 +1,35 @@
 ---
-title: "test"
-author: "test"
-date: "10/3/2021"
+title: "KTU Project"
+author: "Matas Guobužas"
+date: "27/12/2023"
 output:
   html_document:
     keep_md: true
 ---
 
-## R Markdown
+## Žvalgomoji analizė
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Duomenis sudarė 3 skirtingos lentelės, kuriose buvo laikoma informacija apie banko klientus, norinčius pasiimti paskolą. Jas visas apjungus duomenų failas buvo sudaryta iš 10mln. skirtingų įrašų su 17 kintamųjų, iš kurių:
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+*1.* id;
+
+*2.* y - prognozuojamas kintamasis;
+
+*3-15.* likę požymiai apie klientus, tokie kaip: metų uždarbis, kredito reitingas, atidarytų sąskaitų kiekis ir t.t.
+
+Duomenų failas buvo suskirstytas į treniravimosi, testavimo ir validavimo imtis atitinkamomis proporcijomis:
 
 ``` r
-summary(cars)
+splits <- h2o.splitFrame(df, c(0.6,0.2), seed=123)
+train  <- h2o.assign(splits[[1]], "train") # 60%
+valid  <- h2o.assign(splits[[2]], "valid") # 20%
+test   <- h2o.assign(splits[[3]], "test")  # 20%
 ```
 
-    ##      speed           dist       
-    ##  Min.   : 4.0   Min.   :  2.00  
-    ##  1st Qu.:12.0   1st Qu.: 26.00  
-    ##  Median :15.0   Median : 36.00  
-    ##  Mean   :15.4   Mean   : 42.98  
-    ##  3rd Qu.:19.0   3rd Qu.: 56.00  
-    ##  Max.   :25.0   Max.   :120.00
+Sudarytas modelis buvo GBM metodu su hyperparametrais: ntree = 35; maxdepth = 15. Jis pasiekė 0.8297161 AUC įvertinimą po testavimo duomenimis.
 
-## Including Plots
+Parinkto modelio kintamųjų svarbumo histograma:
 
-You can also embed plots, for example:
+![](C:/Users/matas/Desktop/varimp.png)
 
-![](report_files/figure-html/pressure-1.png)<!-- -->
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+**Pagal šią histogramą galima spręsti, jog modelis gan logiškai paaiškina duomenų imtį, kadangi kredito reitingas ir metinis atlyginimas turi didžiausią įtaką sprendžiant ar klientas grąžins paskolą ar ne.**
